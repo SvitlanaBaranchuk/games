@@ -1,23 +1,24 @@
 # Problem Set 2, hangman.py
 # Name: Svitlana Baranchuk
 # Collaborators:
-# Time spent: 9 evenings and 1 morning
+# Time spent: 9 evenings and 2 mornings
 
 # Hangman Game
 import random
 import string
 from enum import Enum
 
-WORDLIST_FILENAME = "words.txt"
-
 # Constants for the game.
-guesses_remaining = 6
-warnings_remaining = 3
-letters_guessed = set()
-vowels = ['a', 'e', 'i', 'o', 'u']
-# dashes - the number of dashes to separate information
-dashes = 12
-unexpected_letter = '_ '
+WORDLIST_FILENAME = "words.txt"
+# REMAINING - start value for guesses_remaining.
+GUESSE_REMAINING = 6
+# WARNINGS - start value for warnings_remaining.
+WARNINGS = 3
+VOWELS = set('aeiou')
+# DASHES - the number of dashes to separate information.
+DASHES = 12
+UNEXPECTED_LETTER = '_ '
+LETTERS_GUESSED = set()
 
 
 class GameMode(Enum):
@@ -25,8 +26,8 @@ class GameMode(Enum):
     The class contains game options:
     1 - without hints and 2 - with hints
     '''
-    WithoutHints = 1
-    WithHints = 2
+    WITHOUT_HINTS = 1
+    WITH_HINTS = 2
 
 
 def load_words():
@@ -59,6 +60,7 @@ def choose_word(wordlist):
 # Load the list of words into the variable wordlist
 # so that it can be accessed from anywhere in the program
 wordlist = load_words()
+secret_word = choose_word(wordlist)
 
 
 def is_word_guessed(secret_word, letters_guessed):
@@ -83,16 +85,15 @@ def get_guessed_word(secret_word, letters_guessed):
     returns: string, comprised of letters, underscores (_), and spaces that represents
       which letters in secret_word have been guessed so far.
     '''
+    output_letter = ' '
     letter = list(secret_word)
-    output_letter = []
-    output_letter = ''.join(output_letter)
-    output_letter = output_letter.replace(' ', '')
-    output_letter = [output_letter]
+    output_letter = output_letter.strip()
+    output_letter = list(output_letter)
     for i in range(len(letter)):
         if letter[i] in letters_guessed:
             output_letter.append(letter[i])
         else:
-            output_letter.append(unexpected_letter)
+            output_letter.append(UNEXPECTED_LETTER)
     return ''.join(output_letter)
 
 
@@ -106,7 +107,6 @@ def get_available_letters(letters_guessed):
     for i in string.ascii_lowercase:
         if not i in letters_guessed:
             available.append(i)
-
     return ''.join(available)
 
 
@@ -123,10 +123,10 @@ def text_warnings_remainings(warnings_remaining, letters_guessed):
     if warnings_remaining > 0:
         print(f"Oops! You've already guessed that letter. You now have {warnings_remaining} warnings:",
               get_guessed_word(secret_word, letters_guessed))
-        print('-' * dashes)
+        print('-' * DASHES)
     else:
         print("Oops! You've already guessed that letter.", get_guessed_word(secret_word, letters_guessed))
-        print('-' * dashes)
+        print('-' * DASHES)
 
 
 def text_good_guess(guesse, letters_guessed):
@@ -139,7 +139,7 @@ def text_good_guess(guesse, letters_guessed):
     '''
     letters_guessed.add(guesse)
     print('Good guess:', get_guessed_word(secret_word, letters_guessed))
-    print('-' * dashes)
+    print('-' * DASHES)
 
 
 def text_no_valid_letter(warnings_remaining, letters_guessed):
@@ -153,10 +153,10 @@ def text_no_valid_letter(warnings_remaining, letters_guessed):
     if warnings_remaining > 0:
         print(f'Oops! That is not a valid letter. You have {warnings_remaining} warnings left:',
               get_guessed_word(secret_word, letters_guessed))
-        print('-' * dashes)
+        print('-' * DASHES)
     else:
         print('Oops! That is not a valid letter:', get_guessed_word(secret_word, letters_guessed))
-        print('-' * dashes)
+        print('-' * DASHES)
 
 
 def text_not_in_word(letters_guessed):
@@ -167,7 +167,7 @@ def text_not_in_word(letters_guessed):
     does not guess the letter, ie enters a letter that is not in the word.
     '''
     print("Oops! That letter is not in my word:", get_guessed_word(secret_word, letters_guessed))
-    print('-' * dashes)
+    print('-' * DASHES)
 
 
 def information(guesses_remaining, letters_guessed):
@@ -183,59 +183,17 @@ def information(guesses_remaining, letters_guessed):
     print('Available letters:', get_available_letters(letters_guessed))
 
 
-def game_steps(guesses_remaining, warnings_remaining, game_mode, letters_guessed):
+def welcome_message():
     '''
-    guesses_remaining: attempts that are available to the user
-    warnings_remaining: warnings that are available to the user
-    game_mode: from class GameMode
-    letters_guessed: a set of letters that the user enters
-
-    The game_iterations(guesses_remaining, warnings_remaining, game_mode) function
-    determines whether the entered letter is in the word. If so - the
-    program moves on. If not, this letter is a vowel - two attempts
-    are deleted, if a consonant - one attempt. If a character is entered,
-    a warning and their number are displayed. At the end of the number
-    of warnings, one attempt is deleted.
-    If the word is guessed, a greeting message is displayed.
+    This function contains the text that is displayed
+    at the beginning of the game.
     '''
-    while guesses_remaining > 0 and not is_word_guessed(secret_word, letters_guessed):
-        information(guesses_remaining, letters_guessed)
-        guesse = (input('Please guess a letter:')).lower()
-        if guesse in secret_word:
-            # Conditions for the presence of the entered letter in the word.
-            if guesse in letters_guessed:
-                warnings_remaining -= 1
-                if warnings_remaining <= 0:
-                    guesses_remaining -= 1
-                text_warnings_remainings(warnings_remaining, letters_guessed)
-            else:
-                text_good_guess(guesse, letters_guessed)
-
-        # Conditions to be met on the entered "*" or symbol.
-        elif guesse == '*' and  game_mode == GameMode.WithHints:
-            show_possible_matches(get_guessed_word(secret_word, letters_guessed))
-            continue
-        elif not guesse.isascii() or not guesse.isalpha() or len(guesse) != 1:
-            if warnings_remaining > 0:
-                warnings_remaining -= 1
-            elif warnings_remaining <= 0:
-                guesses_remaining -= 1
-            text_no_valid_letter(warnings_remaining, letters_guessed)
-        else:
-            if guesse in vowels:
-                guesses_remaining -= 2
-            else:
-                guesses_remaining -= 1
-            text_not_in_word(letters_guessed)
-
-        # End of the game.
-        if is_word_guessed(secret_word, letters_guessed):
-            print(f'Congratulations, you won! Your total score for this game is: {guesses_remaining * len(set(secret_word))}')
-        if guesses_remaining <= 0:
-            print(f'Sorry, you ran out of guesses. The word was {secret_word}')
+    print('Welcome to the game Hangman!')
+    print('I am thinking of a word that is', len(secret_word), 'letters long.')
+    print('-' * DASHES)
 
 
-def hangman(secret_word, game_mode = GameMode.WithoutHints):
+def hangman(secret_word, guesses_remaining, warnings_remaining, game_mode = GameMode.WITHOUT_HINTS):
     '''
     secret_word: string, the secret word to guess.
 
@@ -260,11 +218,42 @@ def hangman(secret_word, game_mode = GameMode.WithoutHints):
 
     Follows the other limitations detailed in the problem write-up.
     '''
-    print('Welcome to the game Hangman!')
-    print('I am thinking of a word that is', len(secret_word), 'letters long.')
-    print('-' * dashes)
+    welcome_message()
+    while guesses_remaining > 0 and not is_word_guessed(secret_word, LETTERS_GUESSED):
+        information(guesses_remaining, LETTERS_GUESSED)
+        guesse = (input('Please guess a letter:')).lower()
+        if guesse in secret_word:
+            # Conditions for the presence of the entered letter in the word.
+            if guesse in LETTERS_GUESSED:
+                warnings_remaining -= 1
+                if warnings_remaining <= 0:
+                    guesses_remaining -= 1
+                text_warnings_remainings(warnings_remaining, LETTERS_GUESSED)
+            else:
+                text_good_guess(guesse, LETTERS_GUESSED)
 
-    game_steps(guesses_remaining, warnings_remaining, game_mode, letters_guessed)
+        # Conditions to be met on the entered "*" or symbol.
+        elif guesse == '*' and game_mode == GameMode.WITH_HINTS:
+            show_possible_matches(get_guessed_word(secret_word, LETTERS_GUESSED))
+            continue
+        elif not guesse.isascii() or not guesse.isalpha() or len(guesse) != 1:
+            if warnings_remaining > 0:
+                warnings_remaining -= 1
+            elif warnings_remaining <= 0:
+                guesses_remaining -= 1
+            text_no_valid_letter(warnings_remaining, LETTERS_GUESSED)
+        else:
+            if guesse in VOWELS :
+                guesses_remaining -= 2
+            else:
+                guesses_remaining -= 1
+            text_not_in_word(LETTERS_GUESSED)
+
+        # End of the game.
+        if is_word_guessed(secret_word, LETTERS_GUESSED):
+            print(f'Congratulations, you won! Your total score for this game is: {guesses_remaining * len(set(secret_word))}')
+        if guesses_remaining <= 0:
+            print(f'Sorry, you ran out of guesses. The word was {secret_word}')
 
 
 def match_with_gaps(my_word, other_word):
@@ -283,7 +272,7 @@ def match_with_gaps(my_word, other_word):
         for i in range(len(my_word)):
             if my_word[i].isalpha() and my_word[i] != other_word[i]:
                 return False
-            if my_word[i] == unexpected_letter and other_word[i] in my_word:
+            if my_word[i] == UNEXPECTED_LETTER and other_word[i] in my_word:
                 return False
         return True
 
@@ -301,9 +290,12 @@ def show_possible_matches(my_word):
     for word in wordlist:
         if match_with_gaps(my_word, word):
             possible_matches.append(word)
-    print('Possible word matches are:')
-    print(' '.join(possible_matches))
-    print('-' * dashes)
+    if len(possible_matches) != 0:
+        print('Possible word matches are:')
+        print(' '.join(possible_matches))
+    else:
+        print('No matches found')
+    print('-' * DASHES)
 
 
 def hangman_with_hints(secret_word):
@@ -333,10 +325,9 @@ def hangman_with_hints(secret_word):
 
     Follows the other limitations detailed in the problem write-up.
     '''
-    hangman(secret_word, game_mode = GameMode.WithHints)
+    hangman(secret_word, GUESSE_REMAINING, WARNINGS, game_mode=GameMode.WITH_HINTS)
 
 
 if __name__ == "__main__":
 
-    secret_word = choose_word(wordlist)
     hangman_with_hints(secret_word)
