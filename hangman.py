@@ -17,7 +17,7 @@ WARNINGS_INITIAL = 3
 VOWELS = set('aeiou')
 # BORDER_LENGTH - the number of dashes to separate information.
 BORDER_LENGTH = 12
-UNEXPECTED_LETTER = '_'
+UNEXPECTED_LETTER = '_ '
 
 
 class GameMode(Enum):
@@ -93,7 +93,7 @@ def get_guessed_word(secret_word, letters_guessed):
             output_letter.append(letter[i])
         else:
             output_letter.append(UNEXPECTED_LETTER)
-    return ' '.join(output_letter)
+    return ''.join(output_letter)
 
 
 def get_available_letters(letters_guessed):
