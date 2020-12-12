@@ -17,7 +17,7 @@ WARNINGS_INITIAL = 3
 VOWELS = set('aeiou')
 # BORDER_LENGTH - the number of dashes to separate information.
 BORDER_LENGTH = 12
-UNEXPECTED_LETTER = '_ '
+UNEXPECTED_LETTER = '_'
 
 
 class GameMode(Enum):
@@ -93,7 +93,7 @@ def get_guessed_word(secret_word, letters_guessed):
             output_letter.append(letter[i])
         else:
             output_letter.append(UNEXPECTED_LETTER)
-    return ''.join(output_letter)
+    return ' '.join(output_letter)
 
 
 def get_available_letters(letters_guessed):
@@ -290,11 +290,7 @@ def hangman(secret_word, guesses_remaining, warnings_remaining, game_mode=GameMo
 
     # The course of the game.
     welcome_message()
-
-    end_values = game_iterations(guesses_remaining, game_mode, warnings_remaining, letters_guessed)
-    warnings_remaining = end_values[0]
-    guesses_remaining = end_values[1]
-
+    warnings_remaining, guesses_remaining = game_iterations(guesses_remaining, game_mode, warnings_remaining, letters_guessed)
     game_results(guesses_remaining, letters_guessed, secret_word)
 
 
@@ -307,11 +303,10 @@ def match_with_gaps(my_word, other_word):
         _ , and my_word and other_word are of the same length;
         False otherwise:
     '''
-    my_word = my_word.replace(' ', '')
     if len(my_word) != len(other_word):
         return False
     for letter1, letter2 in zip(my_word, other_word):
-        if letter1 == UNEXPECTED_LETTER.replace(' ', ''):
+        if letter1 == UNEXPECTED_LETTER.strip():
             continue
         if letter1 != letter2:
             return False
@@ -328,6 +323,7 @@ def show_possible_matches(my_word):
              that has already been revealed.
     '''
     possible_matches = []
+    my_word = my_word.replace(' ', '')
     for word in wordlist:
         if match_with_gaps(my_word, word):
             possible_matches.append(word)
