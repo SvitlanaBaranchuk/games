@@ -1,7 +1,7 @@
 # Problem Set 2, hangman.py
 # Name: Svitlana Baranchuk
 # Collaborators:
-# Time spent: 9 evenings and 3 mornings
+# Time spent: 9 evenings and 4 mornings
 
 # Hangman Game
 import random
@@ -17,7 +17,7 @@ WARNINGS_INITIAL = 3
 VOWELS = set('aeiou')
 # BORDER_LENGTH - the number of dashes to separate information.
 BORDER_LENGTH = 12
-UNEXPECTED_LETTER = '_ '
+UNEXPECTED_LETTER = '_'
 
 
 class GameMode(Enum):
@@ -84,15 +84,14 @@ def get_guessed_word(letters_guessed):
     returns: string, comprised of letters, underscores (_), and spaces that represents
       which letters in secret_word have been guessed so far.
     '''
-    output_letter = ' '
     letter = list(secret_word)
-    output_letter = output_letter.strip()
-    output_letter = list(output_letter)
+    output_letter = []
     for i in range(len(letter)):
         if letter[i] in letters_guessed:
             output_letter.append(letter[i])
         else:
             output_letter.append(UNEXPECTED_LETTER)
+            output_letter.append(' ')
     return ''.join(output_letter)
 
 
@@ -119,12 +118,12 @@ def text_warnings_remainings(warnings_remaining, letters_guessed):
     If so, one warning about the already entered letter is removed;
     if not, the program goes on.
     '''
-    if warnings_remaining > 0:
+    if warnings_remaining >= 0:
         print(f"Oops! You've already guessed that letter. You now have {warnings_remaining} warnings:",
               get_guessed_word(letters_guessed))
         print('-' * BORDER_LENGTH)
     else:
-        print("Oops! You've already guessed that letter.", get_guessed_word(letters_guessed))
+        print("Oops! You've already guessed that letter.You have no warnings left so you lose one guess:", get_guessed_word(letters_guessed))
         print('-' * BORDER_LENGTH)
 
 
@@ -149,12 +148,13 @@ def text_no_valid_letter(warnings_remaining, letters_guessed):
     This function contains text that will be displayed if the
     user runs out of all warnings about incorrect letter entry.
     '''
-    if warnings_remaining > 0:
+    if warnings_remaining >= 0:
         print(f'Oops! That is not a valid letter. You have {warnings_remaining} warnings left:',
               get_guessed_word(letters_guessed))
         print('-' * BORDER_LENGTH)
     else:
-        print('Oops! That is not a valid letter:', get_guessed_word(letters_guessed))
+        print('Oops! That is not a valid letter. You have no warnings left so you lose one guess:',
+              get_guessed_word(letters_guessed))
         print('-' * BORDER_LENGTH)
 
 
@@ -216,34 +216,34 @@ def game_iterations(guesses_remaining, game_mode, warnings_remaining, letters_gu
             show_possible_matches(get_guessed_word(letters_guessed))
             continue
 
-        # Conditions for the presence of the entered letter in the word.
-        elif guesse in secret_word:
-            if guesse in letters_guessed:
-                warnings_remaining -= 1
-                if warnings_remaining <= 0:
-                    guesses_remaining -= 1
-                text_warnings_remainings(warnings_remaining, letters_guessed)
-            else:
-                text_good_guess(guesse, letters_guessed)
+        if warnings_remaining <= 0:
+            guesses_remaining -= 1
+        # Conditions for the presence of the twice entered letter.
+        if guesse in letters_guessed:
+            warnings_remaining -= 1
+            text_warnings_remainings(warnings_remaining, letters_guessed)
 
         # Conditions to be met on the entered symbol or letter not in the word.
         elif not guesse.isascii() or not guesse.isalpha() or len(guesse) != 1:
-            if warnings_remaining > 0:
-                warnings_remaining -= 1
-            elif warnings_remaining <= 0:
-                guesses_remaining -= 1
+            warnings_remaining -= 1
             text_no_valid_letter(warnings_remaining, letters_guessed)
+
+        # Conditions for the presence of the entered letter in the word.
+        elif guesse in secret_word:
+            letters_guessed.add(guesse)
+            text_good_guess(guesse, letters_guessed)
         else:
+            letters_guessed.add(guesse)
             if guesse in VOWELS:
                 guesses_remaining -= 2
+                text_not_in_word(letters_guessed)
             else:
                 guesses_remaining -= 1
-            text_not_in_word(letters_guessed)
-
+                text_not_in_word(letters_guessed)
     return warnings_remaining, guesses_remaining
 
 
-def score(guesses_remaining):
+def calculate_score(guesses_remaining):
     '''
     This function calculates the value total_score
     in conditions of victory.
@@ -256,7 +256,7 @@ def game_results(guesses_remaining, letters_guessed, secret_word):
     This function contains text to end the game.
     '''
     if is_word_guessed(letters_guessed):
-        print(f'Congratulations, you won! Your total score for this game is: {score(guesses_remaining)}')
+        print(f'Congratulations, you won! Your total score for this game is: {calculate_score(guesses_remaining)}')
     else:
         print(f'Sorry, you ran out of guesses. The word was {secret_word}')
 
@@ -305,10 +305,12 @@ def match_with_gaps(my_word, other_word):
     '''
     if len(my_word) != len(other_word):
         return False
-    for letter1, letter2 in zip(my_word, other_word):
-        if letter1 == UNEXPECTED_LETTER.strip():
-            continue
-        if letter1 != letter2:
+
+    letters_guessed = set(my_word) - {UNEXPECTED_LETTER}
+    for i in range(0, len(my_word)):
+        if my_word[i] == UNEXPECTED_LETTER and other_word[i] in letters_guessed:
+            return False
+        if my_word[i] != UNEXPECTED_LETTER and my_word[i] != other_word[i]:
             return False
     return True
 
